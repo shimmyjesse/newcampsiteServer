@@ -4,7 +4,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const Campsite = require('../models/campsite');
-const { response } = require('express');
+
+//  const { response } = require('express');
 
 const campsiteRouter = express.Router();
 
@@ -79,5 +80,301 @@ campsiteRouter.route('/:campsiteId')
     .catch(err => next(err));
 });
 
+//copied code below:
+
+campsiteRouter.route('/:campsiteId/comments')
+.get((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if (campsite) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(campsite.comments);
+        } else {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
+.post((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if (campsite) {
+            campsite.comments.push(req.body);
+            campsite.save()
+            .then(campsite => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(campsite);
+            })
+            .catch(err => next(err));
+        } else {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
+.put((req, res) => {
+    res.statusCode = 403;
+    res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
+})
+.delete((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if (campsite) {
+            for (let i = (campsite.comments.length-1); i >= 0; i--) {
+                campsite.comments.id(campsite.comments[i]._id).remove();
+            }
+            campsite.save()
+            .then(campsite => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(campsite);
+            })
+            .catch(err => next(err));
+        } else {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+});
+
+campsiteRouter.route('/:campsiteId/comments/:commentId')
+.get((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if (campsite && campsite.comments.id(req.params.commentId)) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(campsite.comments.id(req.params.commentId));
+        } else if (!campsite) {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
+        } else {
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
+.post((req, res) => {
+    res.statusCode = 403;
+    res.end(`POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`);
+})
+.put((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if (campsite && campsite.comments.id(req.params.commentId)) {
+            if (req.body.rating) {
+                campsite.comments.id(req.params.commentId).rating = req.body.rating;
+            }
+            if (req.body.text) {
+                campsite.comments.id(req.params.commentId).text = req.body.text;
+            }
+            campsite.save()
+            .then(campsite => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(campsite);
+            })
+            .catch(err => next(err));
+        } else if (!campsite) {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
+        } else {
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
+.delete((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .then(campsite => {
+        if (campsite && campsite.comments.id(req.params.commentId)) {
+            campsite.comments.id(req.params.commentId).remove();
+            campsite.save()
+            .then(campsite => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(campsite);
+            })
+            .catch(err => next(err));
+        } else if (!campsite) {
+            err = new Error(`Campsite ${req.params.campsiteId} not found`);
+            err.status = 404;
+            return next(err);
+        } else {
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+});
+
+// Subdocument within database operation
+
 
 module.exports = campsiteRouter;
+
+
+//  Campsite.deleteMany()       // Static method, empty params list resulting in every doc in campsites collection
+
+
+
+ ///////////////////////////////// Not copied / self-typed code below ///////////////////////////////////////////
+
+// campsiteRouter.route('/:campsiteId/comments')
+// .get((req, res, next) => {  // 'next' is passed in for error handling.
+//     Campsite.findById(req.params.campsiteId) //queries the database for only a SINGLE campsite
+//     .then(campsite => {
+//         if (campsite) {
+//             res.statusCode = 200;
+//             res.setHeader('Content-Type', 'application/json');
+//             res.json(campsite.comments);
+//         } else {
+//             err = new Error(`Campsite ${req.params.campsiteId} not found`);
+//             err.status = 404;
+//             return next(err);   //next(err) passes the error to the Express error handling mechanism
+//         }
+//     })
+//     .catch(err => next(err));
+// })
+// .post((req, res, next) => {
+//     Campsite.findById(req.params.campsiteId) //queries the database for only a SINGLE campsite
+//     .then(campsite => {
+//         if (campsite) {
+//             campsite.comments.push(req.body);
+//             campsite.save()
+//             .then(campsite => {
+//                 res.statusCode = 200;
+//                 res.setHeader('Content-Type', 'application/json');
+//                 res.json(campsite);
+//             })
+//             .catch(err => next(err));
+//         } else {
+//             err = new Error(`Campsite ${req.params.campsiteId} not found`);
+//             err.status = 404;
+//             return next(err);   //next(err) passes the error to the Express error handling mechanism
+//         }
+//     })
+//     .catch(err => next(err));
+// })                                                              
+// .put((req, res) => {    //PUT isn't allowed on campsites path
+//     res.statusCode = 403;
+//     res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
+// })
+// .delete((req, res, next) => {   //requesting to delete ALL campsites.
+//     Campsite.findById(req.params.campsiteId) //queries the database for only a SINGLE campsite
+//     .then(campsite => {
+//         if (campsite) {
+//             for (let i = (campsite.comments.length-1); i >= 0; i--) {
+//                 campsite.comments.id(campsite.comments[i]._id).remove();
+//             }
+//             campsite.save()
+//             .then(campsite => {
+//                 res.statusCode = 200;
+//                 res.setHeader('Content-Type', 'application/json');
+//                 res.json(campsite);
+//             })
+//             .catch(err => next(err));
+//         } else {
+//             err = new Error(`Campsite ${req.params.campsiteId} not found`);
+//             err.status = 404;
+//             return next(err);   //next(err) passes the error to the Express error handling mechanism
+//         }     // Sends the 'response' back.
+//     })
+//     .catch(err => next(err));
+// });
+
+
+//     // GET did not respond how it was shown in the video //
+
+// campsiteRouter.route('/:campsiteId/comments/:commentId')
+// .get((req, res, next) => {  // 'next' is passed in for error handling.
+//     Campsite.findById(req.params.campsiteId) //queries the database for only a SINGLE campsite
+//     .then(campsite => {
+//         if (campsite && campsite.comments.id(req.params.commentId)) {   //checks if this is a non-null, truthy value
+//             res.statusCode = 200;
+//             res.setHeader('Content-Type', 'application/json');
+//             res.json(campsite.comments.id(req.params.commentsId));
+//         } else if (!campsite) {
+//             err = new Error(`Campsite ${req.params.campsiteId} not found`);
+//             err.status = 404;
+//             return next(err);
+//         } else {
+//             err = new Error(`Comment ${req.params.commentId} not found`);
+//             err.status = 404;
+//             return next(err);   //next(err) passes the error to the Express error handling mechanism
+//         }
+//     })
+//     .catch(err => next(err));
+// })
+// .post((req, res) => {
+//     res.statusCode = 403
+//     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`)
+// })                                                              
+// .put((req, res, next) => {
+//     Campsite.findById(req.params.campsiteId) //queries the database for only a SINGLE campsite
+//     .then(campsite => {
+//         if (campsite && campsite.comments.id(req.params.commentId)) {             //checks if this is a non-null, truthy value
+//             if (req.body.rating) {
+//                 campsite.comments.id(req.params.commentId).rating = req.body.rating;
+//             }
+//             if (req.body.text) {
+//                 campsite.comments.id(req.params.commentId).text = req.body.text;
+//             }
+//             campsite.save()
+//             .then(campsite => {
+//                 res.statusCode = 200;
+//                 res.setHeader = ('Content-Type', 'application/json');
+//                 res.json(campsite);
+//             })
+//             .catch(err => next(err));
+//         } else if (!campsite) {
+//             err = new Error(`Campsite ${req.params.campsiteId} not found`);
+//             err.status = 404;
+//             return next(err);
+//         } else {
+//             err = new Error(`Comment ${req.params.commentId} not found`);
+//             err.status = 404;
+//             return next(err);   //next(err) passes the error to the Express error handling mechanism
+//         }
+//     })
+//     .catch(err => next(err));
+// })
+// .delete((req, res, next) => {   //requesting to delete ALL campsites.
+//     Campsite.findById(req.params.campsiteId) //queries the database for only a SINGLE campsite
+//     .then(campsite => {
+//         if (campsite && campsite.comments.id(req.params.commentId)) {             //checks if this is a non-null, truthy value
+//             campsite.comments.id(req.params.commentId).remove();
+//             campsite.save()
+//             .then(campsite => {
+//                 res.statusCode = 200;
+//                 res.setHeader = ('Content-Type', 'application/json');
+//                 res.json(campsite);
+//             })
+//             .catch(err => next(err));
+//         } else if (!campsite) {
+//             err = new Error(`Campsite ${req.params.campsiteId} not found`);
+//             err.status = 404;
+//             return next(err);
+//         } else {
+//             err = new Error(`Comment ${req.params.commentId} not found`);
+//             err.status = 404;
+//             return next(err);   //next(err) passes the error to the Express error handling mechanism
+//         }     // Sends the 'response' back.
+//     })
+//     .catch(err => next(err));
+// });
