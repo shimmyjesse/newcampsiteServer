@@ -1,6 +1,6 @@
 // where we define the mongoose Schema & the model for all documents in our databases campsites collection
 const mongoose = require('mongoose');
-
+//test
 require('mongoose-currency').loadType(mongoose);
 const Currency = mongoose.Types.Currency;
 
