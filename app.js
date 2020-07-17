@@ -53,40 +53,25 @@ app.use(session({
   store: new FileStore()  //creates new object to save session info to the server's hard drive (Not just the running app memory)
 }));
 
+app.use('/', indexRouter);
+app.use('/users', usersRouter); //both routers were moved from below the auth function to above, to let auth users have access
+
 // this is where we add authentication
 function auth(req, res, next) {
   console.log(req.session);
-  
+
   if (!req.session.user) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        const err = new Error('You are not authenticated!');
-          res.setHeader('WWW-Authenticate', 'Basic'); // challenges user for credentials
+      const err = new Error('You are not authenticated!');
+      err.status = 401;
+      return next(err);
+  } else {
+      if (req.session.user === 'authenticated') {
+          return next();
+      } else {
+          const err = new Error('You are not authenticated!');
           err.status = 401;
           return next(err);
-    }
-
-    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    const user = auth[0];
-    const pass = auth[1];
-    if (user === 'admin' && pass === 'password') {
-        req.session.user = 'admin';
-        return next(); // authorized
-    } else {
-        const err = new Error('You are not authenticated!');
-        res.setHeader('WWW-Authenticate', 'Basic');
-        err.status = 401;
-        return next(err);
-    }
-  } else {
-    if (req.session.user === 'admin') {
-      //console.log('req.session:', req.session);
-          return next();
-    } else {
-        const err = new Error('You are not authenticated!');
-        err.status = 401;
-        return next(err);
-    }
+      }
   }
 }
 
@@ -95,8 +80,7 @@ app.use(auth)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // express server request from client: Middleware is applied to request in the order in which the middleware is declared here.
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 app.use('/campsites', campsiteRouter);
 app.use('/promotions', promotionRouter);
 app.use('/partners', partnerRouter);
@@ -118,3 +102,48 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//
+// before Express sessions were implemented on function auth():
+
+// // this is where we add authentication
+// function auth(req, res, next) {
+//   console.log(req.session);
+  
+//   if (!req.session.user) {
+//     const authHeader = req.headers.authorization;
+//     if (!authHeader) {
+//         const err = new Error('You are not authenticated!');
+//           res.setHeader('WWW-Authenticate', 'Basic'); // challenges user for credentials
+//           err.status = 401;
+//           return next(err);
+//     }
+
+//     const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+//     const user = auth[0];
+//     const pass = auth[1];
+//     if (user === 'admin' && pass === 'password') {      /////////////////////////////////////////////
+//         req.session.user = 'admin';
+//         return next(); // authorized
+//     } else {                                // this 'if/else' block of code: used for hard coding in user and pass.
+//         const err = new Error('You are not authenticated!');  
+//         res.setHeader('WWW-Authenticate', 'Basic'); // challenges user for credentials
+//         err.status = 401;
+//         return next(err);
+//     }                                                   /////////////////////////////////////////////
+//   } else {
+//     if (req.session.user === 'admin') {
+//       //console.log('req.session:', req.session);
+//           return next();
+//     } else {
+//         const err = new Error('You are not authenticated!');
+//         err.status = 401;
+//         return next(err);
+//     }
+//   }
+// }
+//
+////////////////////////////////////////////////////////////////////////////////////
