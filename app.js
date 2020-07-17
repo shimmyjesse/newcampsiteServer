@@ -33,11 +33,14 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-app.use(logger('dev'));
+
+//Express Middleware
+app.use(logger('dev')); //Morgan
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// this is where we add authentication
 function auth(req, res, next) {
   console.log(req.headers);
   const authHeader = req.headers.authorization;
@@ -62,8 +65,10 @@ function auth(req, res, next) {
 }
 
 app.use(auth)
+
 app.use(express.static(path.join(__dirname, 'public')));
 
+// express server request from client: Middleware is applied to request in the order in which the middleware is declared here.
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/campsites', campsiteRouter);
