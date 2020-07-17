@@ -5,6 +5,12 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const session = require('express-session');
+const FileStore = require('session-file-store')(session);
+// Having two sets of parameters after a function call: JS has First-class functions/a function can return another function..
+// when invoking teh require() and argument: 'session-file-store': require() is returning another function as its return value.
+// Then, we're immediately calling that return function with that 2nd param list (session).
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -33,44 +39,54 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-
 //Express Middleware
 app.use(logger('dev')); //Morgan
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('12345-67890-09876-54321'));
+//app.use(cookieParser('12345-67890-09876-54321')); //postiential conflict if using both cookieParser and ExpressSessions(has its own implementation of cookies) together.
+
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false, //when new session is created, but no updates are made, it is empty and, therefore, it won't be saved at the end of the req(no cookie will set to client, as well.)
+  resave: false,
+  store: new FileStore()  //creates new object to save session info to the server's hard drive (Not just the running app memory)
+}));
 
 // this is where we add authentication
 function auth(req, res, next) {
-  if (!req.signedCookies.user) {
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-          const err = new Error('You are not authenticated!');
+  console.log(req.session);
+  
+  if (!req.session.user) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        const err = new Error('You are not authenticated!');
           res.setHeader('WWW-Authenticate', 'Basic'); // challenges user for credentials
           err.status = 401;
           return next(err);
-      }
+    }
 
-      const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-      const user = auth[0];
-      const pass = auth[1];
-      if (user === 'admin' && pass === 'password') {
-          res.cookie('user', 'admin', {signed: true});  // the 3rd and optional argument: configuration values: {signed: true}: express know to use secret key from cookie parser to create a signed cookie.
-          return next(); // authorized
-      } else {
-          const err = new Error('You are not authenticated!');
-          res.setHeader('WWW-Authenticate', 'Basic');
-          err.status = 401;
-          return next(err);
-      }
+    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+    const user = auth[0];
+    const pass = auth[1];
+    if (user === 'admin' && pass === 'password') {
+        req.session.user = 'admin';
+        return next(); // authorized
+    } else {
+        const err = new Error('You are not authenticated!');
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        return next(err);
+    }
   } else {
-      if (req.signedCookies.user === 'admin') {
+    if (req.session.user === 'admin') {
+      //console.log('req.session:', req.session);
           return next();
-      } else {
-          const err = new Error('You are not authenticated!');
-          err.status = 401;
-          return next(err);
-      }
+    } else {
+        const err = new Error('You are not authenticated!');
+        err.status = 401;
+        return next(err);
+    }
   }
 }
 
