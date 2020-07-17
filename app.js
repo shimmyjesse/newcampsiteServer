@@ -10,6 +10,8 @@ const FileStore = require('session-file-store')(session);
 // Having two sets of parameters after a function call: JS has First-class functions/a function can return another function..
 // when invoking teh require() and argument: 'session-file-store': require() is returning another function as its return value.
 // Then, we're immediately calling that return function with that 2nd param list (session).
+const passport = require('passport');
+const authenticate = require('./authenticate');
 
 
 var indexRouter = require('./routes/index');
@@ -53,25 +55,22 @@ app.use(session({
   store: new FileStore()  //creates new object to save session info to the server's hard drive (Not just the running app memory)
 }));
 
+app.use(passport.initialize()); //  // both only used when using Express Session-based authentication
+app.use(passport.session());    //  // both provided by Passport, checks for existing session for client
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter); //both routers were moved from below the auth function to above, to let auth users have access
 
 // this is where we add authentication
 function auth(req, res, next) {
-  console.log(req.session);
+  console.log(req.user);
 
-  if (!req.session.user) {
-      const err = new Error('You are not authenticated!');
+  if (!req.user) {
+      const err = new Error('You are not authenticated!');                    
       err.status = 401;
       return next(err);
   } else {
-      if (req.session.user === 'authenticated') {
-          return next();
-      } else {
-          const err = new Error('You are not authenticated!');
-          err.status = 401;
-          return next(err);
-      }
+      return next();
   }
 }
 
