@@ -15,6 +15,7 @@ campsiteRouter.use(bodyParser.json());
 campsiteRouter.route('/')
 .get((req, res, next) => {  // 'next' is passed in for error handling.
     Campsite.find() //queries the database for all the documents that were instantiated using the Campsite model.
+    .populate('comments.author')
     .then(campsites => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -49,6 +50,7 @@ campsiteRouter.route('/')
 campsiteRouter.route('/:campsiteId')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)    //This campsiteId is getting parsed from the HTTP request from whatever the client/user typed in as the 'id' they want to access.
+    .populate('comments.author')
     .then(campsite => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -86,6 +88,7 @@ campsiteRouter.route('/:campsiteId')
 campsiteRouter.route('/:campsiteId/comments')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')
     .then(campsite => {
         if (campsite) {
             res.statusCode = 200;
@@ -103,6 +106,7 @@ campsiteRouter.route('/:campsiteId/comments')
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite) {
+            req.body.author = req.user._id; //when comment is saved, this will provide the user id who submitted the comment in the author field
             campsite.comments.push(req.body);
             campsite.save()
             .then(campsite => {
@@ -149,6 +153,7 @@ campsiteRouter.route('/:campsiteId/comments')
 campsiteRouter.route('/:campsiteId/comments/:commentId')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
             res.statusCode = 200;
