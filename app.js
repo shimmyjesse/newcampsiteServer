@@ -3,16 +3,15 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);
-// Having two sets of parameters after a function call: JS has First-class functions/a function can return another function..
-// when invoking teh require() and argument: 'session-file-store': require() is returning another function as its return value.
-// Then, we're immediately calling that return function with that 2nd param list (session).
 const passport = require('passport');
-const authenticate = require('./authenticate');
+const config = require('./config');
 
+// const session = require('express-session');
+// const FileStore = require('session-file-store')(session);
+// Having two sets of parameters after a function call: JS has First-class functions/a function can return another function..
+// when invoking the require() and argument: 'session-file-store': require() is returning another function as its return value.
+// Then, we're immediately calling that return function with that 2nd param list (session).
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -22,7 +21,7 @@ const partnerRouter = require('./routes/partnerRouter');
 
 const mongoose = require('mongoose');
 
-const url = 'mongodb://localhost:27017/nucampsite';
+const url = config.mongoUrl;
 const connect = mongoose.connect(url, {
   useCreateIndex: true,
   useFindAndModify: false,
@@ -47,34 +46,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser('12345-67890-09876-54321')); //postiential conflict if using both cookieParser and ExpressSessions(has its own implementation of cookies) together.
 
-app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  saveUninitialized: false, //when new session is created, but no updates are made, it is empty and, therefore, it won't be saved at the end of the req(no cookie will set to client, as well.)
-  resave: false,
-  store: new FileStore()  //creates new object to save session info to the server's hard drive (Not just the running app memory)
-}));
-
 app.use(passport.initialize()); //  // both only used when using Express Session-based authentication
-app.use(passport.session());    //  // both provided by Passport, checks for existing session for client
+  //  // both provided by Passport, checks for existing session for client
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter); //both routers were moved from below the auth function to above, to let auth users have access
 
-// this is where we add authentication
-function auth(req, res, next) {
-  console.log(req.user);
-
-  if (!req.user) {
-      const err = new Error('You are not authenticated!');                    
-      err.status = 401;
-      return next(err);
-  } else {
-      return next();
-  }
-}
-
-app.use(auth)
+// this is where we add authentication  // no longer protecting the access to the static files in the public folder
 
 app.use(express.static(path.join(__dirname, 'public')));
 

@@ -4,6 +4,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const Campsite = require('../models/campsite');
+const authenticate = require('../authenticate');
 
 //  const { response } = require('express');
 
@@ -21,7 +22,7 @@ campsiteRouter.route('/')
     })
     .catch(err => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     Campsite.create(req.body) //mongoose automatically makes sure that it fits the Schema that was defined.
     .then(campsite => {
         console.log('Campsite Created ', campsite);
@@ -31,11 +32,11 @@ campsiteRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put((req, res) => {    //PUT isn't allowed on campsites path
+.put(authenticate.verifyUser, (req, res) => {    //PUT isn't allowed on campsites path
     res.statusCode = 403;
     res.end('PUT operation not supported on /campsites');
 })
-.delete((req, res, next) => {   //requesting to delete ALL campsites.
+.delete(authenticate.verifyUser, (req, res, next) => {   //requesting to delete ALL campsites.
     Campsite.deleteMany()       // Static method, empty params list resulting in every doc in campsites collection 
     .then(response => {
         res.statusCode = 200;
@@ -55,11 +56,11 @@ campsiteRouter.route('/:campsiteId')
     })
     .catch(err => next(err));
 })  
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}`)
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     Campsite.findByIdAndUpdate(req.params.campsiteId, {     // 1st argument we've passed in the campsiteId.
         $set: req.body                                  //'$set' : update operator. //data in request body.
     }, { new: true })                                       // 3rd argument: object: so we get back info about the updated doc as the result of this method.
@@ -70,7 +71,7 @@ campsiteRouter.route('/:campsiteId')
     })
     .catch(err => next(err));    
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findByIdAndDelete(req.params.campsiteId)   //we want to pass this method the id of the campsite to delete: using the saved router parameter(req.params.campsiteId)
     .then(response => {
         res.statusCode = 200;
@@ -98,7 +99,7 @@ campsiteRouter.route('/:campsiteId/comments')
     })
     .catch(err => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite) {
@@ -118,11 +119,11 @@ campsiteRouter.route('/:campsiteId/comments')
     })
     .catch(err => next(err));
 })
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`PUT operation not supported on /campsites/${req.params.campsiteId}/comments`);
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite) {
@@ -165,11 +166,11 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     })
     .catch(err => next(err));
 })
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`);
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
@@ -198,7 +199,7 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     })
     .catch(err => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
