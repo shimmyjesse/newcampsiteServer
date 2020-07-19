@@ -40,3 +40,38 @@ exports.jwtPassport = passport.use(
 );
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+exports.verifyAdmin = (req, res, next) => {
+    if (req.user.admin) {
+        return next();
+    } else {
+        const err = new Error('You are not authorized, be gone!');
+        err.status = 403;
+        return next(err);
+    }
+}
+
+
+// {
+//     "username": "Dio",
+//     "password": "password",
+//     "fistname": "rodney",
+//     "lastname": "james"
+// }
+
+// {
+//     "username": "admin",
+//     "password": "password",
+//     "fistname": "perota",
+//     "lastname": "chingo"
+// }
+
+
+// {
+    
+//     "name": "React Lake Campground",
+//     "image": "images/react-lake.jpg",
+//     "elevation": 1233,
+//     "featured": false,
+//     "cost": 65,
+//     "description": "Nestled in the foothills of the Chrome Mountains, this campground on the shores of the pristine React Lake is a favorite for fly fishers."
+// }
