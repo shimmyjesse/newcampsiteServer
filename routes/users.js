@@ -68,4 +68,14 @@ router.get('/logout', cors.corsWithOptions, (req, res, next) => {
   }
 });
 
+// plugging in facebook token Strategy
+router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {  // handling the res to the client after authentication has been completed using the acces token.
+  if (req.user) {     //Making sure valid user
+      const token = authenticate.getToken({_id: req.user._id}); //creating new JSON web token, passing in the user doc id.
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: true, token: token, status: 'You are successfully logged in!'});
+  }   // no else statement for err???
+});
+
 module.exports = router;
